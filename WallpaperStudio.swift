@@ -23,7 +23,83 @@ final class WallpaperWindow: NSWindow {
     override var canBecomeMain: Bool { false }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class WallpaperTileView: NSView {
+    let imageView = NSImageView()
+    let titleField = NSTextField(labelWithString: "")
+    var onHover: ((Bool) -> Void)?
+    var isHighlighted = false { didSet { updateAppearance() } }
+    var isSelected = false { didSet { updateAppearance() } }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.cornerRadius = 12
+        layer?.borderWidth = 1
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        imageView.wantsLayer = true
+        imageView.layer?.cornerRadius = 9
+        imageView.layer?.masksToBounds = true
+        titleField.alignment = .center
+        titleField.lineBreakMode = .byTruncatingMiddle
+        titleField.maximumNumberOfLines = 1
+        titleField.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        titleField.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(imageView)
+        addSubview(titleField)
+        NSLayoutConstraint.activate([
+            imageView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            imageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            imageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            imageView.heightAnchor.constraint(equalToConstant: 88),
+            titleField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
+            titleField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
+            titleField.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8)
+        ])
+        updateAppearance()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func updateTrackingAreas() {
+        trackingAreas.forEach { removeTrackingArea($0) }
+        addTrackingArea(NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeInKeyWindow], owner: self))
+        super.updateTrackingAreas()
+    }
+
+    override func mouseEntered(with event: NSEvent) { isHighlighted = true; onHover?(true) }
+    override func mouseExited(with event: NSEvent) { isHighlighted = false; onHover?(false) }
+
+    private func updateAppearance() {
+        layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(isHighlighted || isSelected ? 0.95 : 0.72).cgColor
+        layer?.borderColor = (isSelected ? NSColor.systemPink : (isHighlighted ? NSColor.systemCyan : NSColor.separatorColor)).cgColor
+        layer?.borderWidth = isSelected || isHighlighted ? 2 : 1
+        layer?.shadowColor = NSColor.systemCyan.cgColor
+        layer?.shadowRadius = isHighlighted ? 8 : 0
+        layer?.shadowOpacity = isHighlighted ? 0.7 : 0
+    }
+}
+
+final class WallpaperGridItem: NSCollectionViewItem {
+    private var tile: WallpaperTileView { view as! WallpaperTileView }
+    override func loadView() { view = WallpaperTileView(frame: NSRect(x: 0, y: 0, width: 150, height: 125)) }
+    override var isSelected: Bool { didSet { tile.isSelected = isSelected } }
+
+    func configure(with url: URL) {
+        tile.titleField.stringValue = url.deletingPathExtension().lastPathComponent
+        tile.imageView.image = NSImage(systemSymbolName: "film", accessibilityDescription: "Video")
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 280, height: 180)
+        let time = CMTime(seconds: 0.5, preferredTimescale: 600)
+        generator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) { [weak self] _, image, _, _, _ in
+            guard let image else { return }
+            DispatchQueue.main.async { self?.tile.imageView.image = NSImage(cgImage: image, size: .zero) }
+        }
+    }
+}
+
+final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSource, NSCollectionViewDelegate {
     private var wallpaperDirectory: URL {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Documents/Wallpapers", isDirectory: true)
@@ -120,29 +196,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hint.textColor = .secondaryLabelColor
         hint.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(hint)
-
-        let stack = NSStackView()
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 8
-        stack.edgeInsets = NSEdgeInsets(top: 16, left: 12, bottom: 16, right: 12)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        for url in availableWallpapers() {
-            let button = NSButton(title: url.deletingPathExtension().lastPathComponent,
-                                  target: self, action: #selector(selectFromPicker(_:)))
-            button.identifier = NSUserInterfaceItemIdentifier(url.path)
-            button.alignment = .left
-            button.controlSize = .large
-            button.bezelStyle = .rounded
-            button.translatesAutoresizingMaskIntoConstraints = false
-            button.widthAnchor.constraint(equalToConstant: 450).isActive = true
-            stack.addArrangedSubview(button)
-        }
-
+        let layout = NSCollectionViewFlowLayout()
+        layout.itemSize = NSSize(width: 150, height: 125)
+        layout.sectionInset = NSEdgeInsets(top: 12, left: 8, bottom: 12, right: 8)
+        layout.minimumInteritemSpacing = 10
+        layout.minimumLineSpacing = 12
+        let collection = NSCollectionView()
+        collection.collectionViewLayout = layout
+        collection.isSelectable = true
+        collection.allowsEmptySelection = true
+        collection.allowsMultipleSelection = false
+        collection.dataSource = self
+        collection.delegate = self
+        collection.register(WallpaperGridItem.self, forItemWithIdentifier: NSUserInterfaceItemIdentifier("WallpaperGridItem"))
+        collection.backgroundColors = [.clear]
+        collection.translatesAutoresizingMaskIntoConstraints = false
         let scroll = NSScrollView()
         scroll.hasVerticalScroller = true
         scroll.drawsBackground = false
-        scroll.documentView = stack
+        scroll.documentView = collection
         scroll.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(scroll)
 
@@ -157,16 +229,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             scroll.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
         ])
         window.contentView = container
+        window.makeFirstResponder(collection)
     }
 
-    @objc private func selectFromPicker(_ sender: NSButton) {
-        guard let rawPath = sender.identifier?.rawValue else { return }
-        let url = URL(fileURLWithPath: rawPath)
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
-        currentWallpaper = url
-        installWallpaper(url)
+    func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int {
+        availableWallpapers().count
+    }
+
+    func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
+        let item = collectionView.makeItem(withIdentifier: NSUserInterfaceItemIdentifier("WallpaperGridItem"), for: indexPath) as! WallpaperGridItem
+        item.configure(with: availableWallpapers()[indexPath.item])
+        return item
+    }
+
+    func collectionView(_ collectionView: NSCollectionView, didSelectItemsAt indexPaths: Set<IndexPath>) {
+        guard let indexPath = indexPaths.first else { return }
+        let wallpapers = availableWallpapers()
+        guard indexPath.item < wallpapers.count else { return }
+        currentWallpaper = wallpapers[indexPath.item]
+        installWallpaper(currentWallpaper)
         updateMenu()
-        refreshPicker()
+    }
+
+    func collectionView(_ collectionView: NSCollectionView, didDeselectItemsAt indexPaths: Set<IndexPath>) {
+        collectionView.reloadData()
     }
 
     private func installWallpaper(_ url: URL) {
