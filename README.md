@@ -12,6 +12,7 @@ The app opens a visual grid of wallpaper thumbnails so you can preview and selec
 - Loops MP4 videos continuously using AVFoundation.
 - Supports separate monitor resolutions and arrangements.
 - Matching Wallpaper Studio icon in the menu bar opens the thumbnail grid directly.
+- Updates macOS’s static desktop wallpaper to match the selected live wallpaper as a fallback.
 - Automatically scans `~/Documents/Wallpapers`.
 - Lets each user choose a different wallpaper folder from the picker.
 - “Rescan Wallpaper Folder” for newly added videos.

@@ -121,7 +121,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
         currentWallpaper = wallpapers.first
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         updateMenu()
-        if let url = currentWallpaper { installWallpaper(url) }
+        if let url = currentWallpaper {
+            installWallpaper(url)
+            updateStaticWallpaper(for: url)
+        }
         openPicker()
     }
 
@@ -270,6 +273,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
         guard indexPath.item < wallpapers.count else { return }
         currentWallpaper = wallpapers[indexPath.item]
         installWallpaper(currentWallpaper)
+        updateStaticWallpaper(for: currentWallpaper)
         updateMenu()
     }
 
@@ -309,6 +313,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
             players.append(player)
             loopers.append(looper)
             windows.append(window)
+        }
+    }
+
+    private func updateStaticWallpaper(for videoURL: URL) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let asset = AVURLAsset(url: videoURL)
+            let generator = AVAssetImageGenerator(asset: asset)
+            generator.appliesPreferredTrackTransform = true
+            generator.maximumSize = CGSize(width: 3840, height: 2160)
+            let time = CMTime(seconds: 0.5, preferredTimescale: 600)
+            generator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) { _, image, _, _, _ in
+                guard let image else { return }
+                let bitmap = NSBitmapImageRep(cgImage: image)
+                guard let pngData = bitmap.representation(using: .png, properties: [:]) else { return }
+                let supportDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                    .appendingPathComponent("Wallpaper Studio", isDirectory: true)
+                let fallbackURL = supportDirectory.appendingPathComponent("current-wallpaper.png")
+                do {
+                    try FileManager.default.createDirectory(at: supportDirectory, withIntermediateDirectories: true)
+                    try pngData.write(to: fallbackURL, options: .atomic)
+                    DispatchQueue.main.async {
+                        let options: [NSWorkspace.DesktopImageOptionKey: Any] = [
+                            .imageScaling: NSImageScaling.scaleProportionallyUpOrDown.rawValue,
+                            .allowClipping: true
+                        ]
+                        for screen in NSScreen.screens {
+                            try? NSWorkspace.shared.setDesktopImageURL(fallbackURL, for: screen, options: options)
+                        }
+                    }
+                } catch {
+                    return
+                }
+            }
         }
     }
 }
