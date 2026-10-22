@@ -20,10 +20,10 @@ Wallpaper Studio is a lightweight, local-only macOS live wallpaper player. It ru
 
 ## Install the packaged app
 
-GitHub Actions produces `Wallpaper-Studio-macos.zip`:
+GitHub Actions produces `Wallpaper-Studio-macos.zip` and `Wallpaper-Studio-macos.dmg`:
 
-1. Unzip the archive.
-2. Move `Wallpaper Studio.app` to `Applications`.
+1. Open the DMG, or unzip the archive.
+2. Drag `Wallpaper Studio.app` to the `Applications` shortcut in the DMG window.
 3. Create `~/Documents/Wallpapers` and copy MP4 files there.
 4. Open the app and look for the 🎞️ icon in the menu bar.
 5. Select any wallpaper from the menu.
@@ -60,7 +60,7 @@ build.sh                           Local build and launch script
 
 ## GitHub Actions packaging
 
-The workflow runs on `macos-latest` for pushes to `main`, version tags, or manual runs. It compiles the app, creates `Wallpaper Studio.app`, packages it as `Wallpaper-Studio-macos.zip`, and uploads the ZIP as a workflow artifact.
+The workflow runs on `macos-latest` for pushes to `main`, version tags, or manual runs. It compiles the app, creates `Wallpaper Studio.app`, packages it as both a ZIP and a DMG with an Applications shortcut, and uploads both files as workflow artifacts.
 
 Create a versioned build with:
 

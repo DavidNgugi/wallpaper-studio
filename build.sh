@@ -3,7 +3,13 @@ set -e
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 USER_HOME="${HOME}"
-APP="${USER_HOME}/Applications/Wallpaper Studio.app"
+SYSTEM_APP="/Applications/Wallpaper Studio.app"
+USER_APP="${USER_HOME}/Applications/Wallpaper Studio.app"
+if [[ -d "/Applications" && -w "/Applications" ]]; then
+  APP="$SYSTEM_APP"
+else
+  APP="$USER_APP"
+fi
 
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 swiftc -O "$ROOT/WallpaperStudio.swift" -o "$APP/Contents/MacOS/BatmanLiveWallpaper"

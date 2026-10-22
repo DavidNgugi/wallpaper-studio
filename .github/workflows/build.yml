@@ -37,9 +37,26 @@ jobs:
             "build/Wallpaper Studio.app" \
             "build/Wallpaper-Studio-macos.zip"
 
+      - name: Create installable DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf build/dmg
+          mkdir -p build/dmg
+          cp -R "build/Wallpaper Studio.app" build/dmg/
+          ln -s /Applications build/dmg/Applications
+          hdiutil create \
+            -volname "Wallpaper Studio" \
+            -srcfolder build/dmg \
+            -ov \
+            -format UDZO \
+            "build/Wallpaper-Studio-macos.dmg"
+
       - name: Upload installable app
         uses: actions/upload-artifact@v4
         with:
           name: Wallpaper-Studio-macos
-          path: build/Wallpaper-Studio-macos.zip
+          path: |
+            build/Wallpaper-Studio-macos.zip
+            build/Wallpaper-Studio-macos.dmg
           if-no-files-found: error
