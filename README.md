@@ -9,6 +9,7 @@ Wallpaper Studio is a lightweight, local-only macOS live wallpaper player. It ru
 - Supports separate monitor resolutions and arrangements.
 - Menu-bar selector with the 🎞️ icon.
 - Automatically scans `~/Documents/Wallpapers`.
+- Lets each user choose a different wallpaper folder from the picker.
 - “Rescan Wallpaper Folder” for newly added videos.
 - No upload, account, subscription, or network service required.
 
@@ -24,7 +25,7 @@ GitHub Actions produces `Wallpaper-Studio-macos.zip` and `Wallpaper-Studio-macos
 
 1. Open the DMG, or unzip the archive.
 2. Drag `Wallpaper Studio.app` to the `Applications` shortcut in the DMG window.
-3. Create `~/Documents/Wallpapers` and copy MP4 files there.
+3. Copy MP4 files into `~/Documents/Wallpapers`, or use **Choose Wallpaper Folder…** inside the app.
 4. Open the app and look for the 🎞️ icon in the menu bar.
 5. Select any wallpaper from the menu.
 
@@ -40,13 +41,15 @@ The script compiles the Swift source, assembles the app bundle, installs it at `
 
 ## Wallpaper folder
 
-Put wallpapers here:
+By default, put wallpapers here:
 
 ```text
 ~/Documents/Wallpapers
 ```
 
 Only `.mp4` files are shown. Add a video, click the 🎞️ menu-bar icon, and choose **Rescan Wallpaper Folder**.
+
+To use another location, open the app’s picker and click **Choose Wallpaper Folder…**. The selected folder is saved for that macOS user and is used automatically on future launches. The app creates the default folder if it does not exist.
 
 ## Repository layout
 

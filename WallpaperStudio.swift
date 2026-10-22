@@ -100,8 +100,12 @@ final class WallpaperGridItem: NSCollectionViewItem {
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSource, NSCollectionViewDelegate {
+    private let wallpaperDirectoryKey = "wallpaperDirectory"
     private var wallpaperDirectory: URL {
-        FileManager.default.homeDirectoryForCurrentUser
+        if let savedPath = UserDefaults.standard.string(forKey: wallpaperDirectoryKey) {
+            return URL(fileURLWithPath: savedPath, isDirectory: true)
+        }
+        return FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Documents/Wallpapers", isDirectory: true)
     }
     private var windows: [WallpaperWindow] = []
@@ -112,13 +116,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
     private var pickerWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        try? FileManager.default.createDirectory(at: wallpaperDirectory, withIntermediateDirectories: true)
         let wallpapers = availableWallpapers()
-        guard let url = wallpapers.first else { NSApp.terminate(nil); return }
-        currentWallpaper = url
+        currentWallpaper = wallpapers.first
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.title = "🎞️"
         updateMenu()
-        installWallpaper(url)
+        if let url = currentWallpaper { installWallpaper(url) }
         openPicker()
     }
 
@@ -148,6 +152,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
         let picker = NSMenuItem(title: "Open Wallpaper Picker…", action: #selector(openPicker), keyEquivalent: "o")
         picker.target = self
         menu.addItem(picker)
+        let folder = NSMenuItem(title: "Choose Wallpaper Folder…", action: #selector(chooseWallpaperFolder), keyEquivalent: "")
+        folder.target = self
+        menu.addItem(folder)
         let refresh = NSMenuItem(title: "Rescan Wallpaper Folder", action: #selector(rescan), keyEquivalent: "")
         refresh.target = self
         menu.addItem(refresh)
@@ -167,6 +174,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
 
     @objc private func rescan() { updateMenu() }
     @objc private func quit() { NSApp.terminate(nil) }
+
+    @objc private func chooseWallpaperFolder() {
+        let panel = NSOpenPanel()
+        panel.title = "Choose Wallpaper Folder"
+        panel.message = "Select the folder containing your MP4 wallpapers."
+        panel.prompt = "Use This Folder"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = wallpaperDirectory
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        UserDefaults.standard.set(url.path, forKey: wallpaperDirectoryKey)
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        currentWallpaper = availableWallpapers().first
+        updateMenu()
+        refreshPicker()
+        if let url = currentWallpaper { installWallpaper(url) }
+    }
 
     @objc private func openPicker() {
         if pickerWindow == nil {
@@ -192,10 +218,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
         title.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(title)
 
-        let hint = NSTextField(labelWithString: "Videos are loaded locally from ~/Documents/Wallpapers")
+        let displayPath = wallpaperDirectory.path.replacingOccurrences(
+            of: FileManager.default.homeDirectoryForCurrentUser.path, with: "~")
+        let hint = NSTextField(labelWithString: "Videos are loaded locally from \(displayPath)")
         hint.textColor = .secondaryLabelColor
         hint.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(hint)
+
+        let folderButton = NSButton(title: "Choose Wallpaper Folder…", target: self, action: #selector(chooseWallpaperFolder))
+        folderButton.bezelStyle = .rounded
+        folderButton.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(folderButton)
         let layout = NSCollectionViewFlowLayout()
         layout.itemSize = NSSize(width: 150, height: 125)
         layout.sectionInset = NSEdgeInsets(top: 12, left: 8, bottom: 12, right: 8)
@@ -223,7 +256,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
             title.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 22),
             hint.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 6),
             hint.leadingAnchor.constraint(equalTo: title.leadingAnchor),
-            scroll.topAnchor.constraint(equalTo: hint.bottomAnchor, constant: 18),
+            folderButton.topAnchor.constraint(equalTo: hint.bottomAnchor, constant: 10),
+            folderButton.leadingAnchor.constraint(equalTo: hint.leadingAnchor),
+            scroll.topAnchor.constraint(equalTo: folderButton.bottomAnchor, constant: 14),
             scroll.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
             scroll.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
             scroll.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
