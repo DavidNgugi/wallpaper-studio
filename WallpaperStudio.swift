@@ -136,32 +136,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
     }
 
     private func updateMenu() {
-        let menu = NSMenu()
-        let heading = NSMenuItem(title: "Live Wallpaper", action: nil, keyEquivalent: "")
-        heading.isEnabled = false
-        menu.addItem(heading)
-        for url in availableWallpapers() {
-            let item = NSMenuItem(title: url.deletingPathExtension().lastPathComponent,
-                                  action: #selector(selectWallpaper(_:)), keyEquivalent: "")
-            item.target = self
-            item.representedObject = url
-            item.state = (url == currentWallpaper) ? .on : .off
-            menu.addItem(item)
-        }
-        menu.addItem(.separator())
-        let picker = NSMenuItem(title: "Open Wallpaper Picker…", action: #selector(openPicker), keyEquivalent: "o")
-        picker.target = self
-        menu.addItem(picker)
-        let folder = NSMenuItem(title: "Choose Wallpaper Folder…", action: #selector(chooseWallpaperFolder), keyEquivalent: "")
-        folder.target = self
-        menu.addItem(folder)
-        let refresh = NSMenuItem(title: "Rescan Wallpaper Folder", action: #selector(rescan), keyEquivalent: "")
-        refresh.target = self
-        menu.addItem(refresh)
-        let quit = NSMenuItem(title: "Quit Live Wallpaper", action: #selector(quit), keyEquivalent: "q")
-        quit.target = self
-        menu.addItem(quit)
-        statusItem.menu = menu
+        statusItem.menu = nil
+        statusItem.button?.title = "🎞️"
+        statusItem.button?.toolTip = "Open Wallpaper Studio thumbnail grid"
+        statusItem.button?.target = self
+        statusItem.button?.action = #selector(openPicker)
     }
 
     @objc private func selectWallpaper(_ sender: NSMenuItem) {
