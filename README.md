@@ -2,6 +2,10 @@
 
 Wallpaper Studio is a lightweight, local-only macOS live wallpaper player. It runs as a menu-bar utility, supports multiple monitors, and lets you switch between MP4 wallpapers without restarting the app.
 
+![Wallpaper Studio thumbnail grid](docs/images/wallpaper-studio-grid.png)
+
+The app opens a visual grid of wallpaper thumbnails so you can preview and select a live wallpaper with the mouse or keyboard.
+
 ## Features
 
 - One live wallpaper window per connected display.
