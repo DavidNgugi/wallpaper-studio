@@ -120,7 +120,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
         let wallpapers = availableWallpapers()
         currentWallpaper = wallpapers.first
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        statusItem.button?.title = "🎞️"
         updateMenu()
         if let url = currentWallpaper { installWallpaper(url) }
         openPicker()
@@ -137,7 +136,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
 
     private func updateMenu() {
         statusItem.menu = nil
-        statusItem.button?.title = "🎞️"
+        if let iconURL = Bundle.main.url(forResource: "BatmanLiveWallpaper", withExtension: "icns"),
+           let icon = NSImage(contentsOf: iconURL) {
+            icon.size = NSSize(width: 18, height: 18)
+            icon.isTemplate = false
+            statusItem.button?.image = icon
+            statusItem.button?.title = ""
+        } else {
+            statusItem.button?.image = nil
+            statusItem.button?.title = "🎞️"
+        }
         statusItem.button?.toolTip = "Open Wallpaper Studio thumbnail grid"
         statusItem.button?.target = self
         statusItem.button?.action = #selector(openPicker)

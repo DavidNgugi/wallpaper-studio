@@ -11,7 +11,7 @@ The app opens a visual grid of wallpaper thumbnails so you can preview and selec
 - One live wallpaper window per connected display.
 - Loops MP4 videos continuously using AVFoundation.
 - Supports separate monitor resolutions and arrangements.
-- Menu-bar 🎞️ icon opens the thumbnail grid directly.
+- Matching Wallpaper Studio icon in the menu bar opens the thumbnail grid directly.
 - Automatically scans `~/Documents/Wallpapers`.
 - Lets each user choose a different wallpaper folder from the picker.
 - “Rescan Wallpaper Folder” for newly added videos.
@@ -30,7 +30,7 @@ GitHub Actions produces `Wallpaper-Studio-macos.zip` and `Wallpaper-Studio-macos
 1. Open the DMG, or unzip the archive.
 2. Drag `Wallpaper Studio.app` to the `Applications` shortcut in the DMG window.
 3. Copy MP4 files into `~/Documents/Wallpapers`, or use **Choose Wallpaper Folder…** inside the app.
-4. Open the app and click the 🎞️ icon in the menu bar.
+4. Open the app and click the Wallpaper Studio icon in the menu bar.
 5. Select any wallpaper from the thumbnail grid.
 
 If macOS shows a security warning for an unsigned build, use Finder’s Open command from the app’s context menu once.
@@ -51,7 +51,7 @@ By default, put wallpapers here:
 ~/Documents/Wallpapers
 ```
 
-Only `.mp4` files are shown. Add a video and reopen the thumbnail grid from the 🎞️ menu-bar icon.
+Only `.mp4` files are shown. Add a video and reopen the thumbnail grid from the Wallpaper Studio menu-bar icon.
 
 To use another location, open the app’s picker and click **Choose Wallpaper Folder…**. The selected folder is saved for that macOS user and is used automatically on future launches. The app creates the default folder if it does not exist.
 
