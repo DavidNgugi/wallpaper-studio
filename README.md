@@ -58,16 +58,26 @@ build.sh                           Local build and launch script
 .github/workflows/build.yml        GitHub Actions packaging workflow
 ```
 
-## GitHub Actions packaging
+## Release process
 
-The workflow runs on `macos-latest` for pushes to `main`, version tags, or manual runs. It compiles the app, creates `Wallpaper Studio.app`, packages it as both a ZIP and a DMG with an Applications shortcut, and uploads both files as workflow artifacts.
+Installable files are generated when a version tag is pushed. The GitHub Actions workflow runs on `macos-latest`, compiles the app, creates `Wallpaper Studio.app`, packages it as both a ZIP and a DMG with an Applications shortcut, and publishes both files to a GitHub Release.
 
-Create a versioned build with:
+From a clean working tree:
 
 ```sh
+git add .
+git commit -m "Describe the change"
+git push origin main
 git tag v1.0.0
 git push origin v1.0.0
 ```
+
+Then open the repository’s **Releases** page and download either:
+
+- `Wallpaper-Studio-macos.dmg` — recommended drag-and-drop installer.
+- `Wallpaper-Studio-macos.zip` — portable app archive.
+
+The workflow also supports manual runs from the **Actions** tab. Manual runs create artifacts but do not publish a release unless they are triggered by a `v*` tag.
 
 ## Limitations
 
