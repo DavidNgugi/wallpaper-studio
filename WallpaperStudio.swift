@@ -1,5 +1,7 @@
 import AppKit
 import AVFoundation
+import ServiceManagement
+import Darwin
 
 final class VideoView: NSView {
     let playerLayer = AVPlayerLayer()
@@ -116,6 +118,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
     private var pickerWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        registerAsLoginItem()
         try? FileManager.default.createDirectory(at: wallpaperDirectory, withIntermediateDirectories: true)
         let wallpapers = availableWallpapers()
         currentWallpaper = wallpapers.first
@@ -126,6 +129,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSCollectionViewDataSo
             updateStaticWallpaper(for: url)
         }
         openPicker()
+    }
+
+    private func registerAsLoginItem() {
+        guard #available(macOS 13.0, *) else { return }
+        do {
+            try SMAppService.mainApp.register()
+        } catch {
+            NSLog("Wallpaper Studio could not register as a login item: %@", error.localizedDescription)
+            installLaunchAgentFallback()
+        }
+    }
+
+    private func installLaunchAgentFallback() {
+        let launchAgents = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/LaunchAgents", isDirectory: true)
+        let plistURL = launchAgents.appendingPathComponent("local.batman.livewallpaper.plist")
+        let executable = Bundle.main.executableURL?.path ?? ProcessInfo.processInfo.arguments[0]
+        let plist: [String: Any] = [
+            "Label": "local.batman.livewallpaper",
+            "ProgramArguments": [executable],
+            "RunAtLoad": true,
+            "ProcessType": "Interactive"
+        ]
+        do {
+            try FileManager.default.createDirectory(at: launchAgents, withIntermediateDirectories: true)
+            let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+            try data.write(to: plistURL, options: .atomic)
+            let bootstrap = Process()
+            bootstrap.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+            bootstrap.arguments = ["bootstrap", "gui/\(getuid())", plistURL.path]
+            try bootstrap.run()
+        } catch {
+            NSLog("Wallpaper Studio could not install its login launch agent: %@", error.localizedDescription)
+        }
     }
 
     private func availableWallpapers() -> [URL] {

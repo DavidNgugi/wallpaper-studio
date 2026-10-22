@@ -91,7 +91,7 @@ The workflow also supports manual runs from the **Actions** tab. Manual runs cre
 
 - Wallpaper videos are supplied by the user and are not bundled.
 - The app is unsigned and not notarized.
-- The app does not yet install itself as a login item.
+- On first launch, the app registers itself as a macOS login item and starts automatically after future logins. macOS may require approval in System Settings → General → Login Items.
 
 ## License
 
