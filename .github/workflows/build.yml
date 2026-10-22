@@ -1,0 +1,45 @@
+name: Build macOS app
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build app bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="build/Wallpaper Studio.app"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          swiftc -O WallpaperStudio.swift \
+            -o "$APP/Contents/MacOS/BatmanLiveWallpaper"
+          cp Info.plist "$APP/Contents/Info.plist"
+          cp Resources/BatmanLiveWallpaper.icns \
+            "$APP/Contents/Resources/BatmanLiveWallpaper.icns"
+
+      - name: Create installable ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          ditto -c -k --sequesterRsrc --keepParent \
+            "build/Wallpaper Studio.app" \
+            "build/Wallpaper-Studio-macos.zip"
+
+      - name: Upload installable app
+        uses: actions/upload-artifact@v4
+        with:
+          name: Wallpaper-Studio-macos
+          path: build/Wallpaper-Studio-macos.zip
+          if-no-files-found: error

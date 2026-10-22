@@ -24,7 +24,10 @@ final class WallpaperWindow: NSWindow {
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private let wallpaperDirectory = "/Users/user/Documents/Wallpapers"
+    private var wallpaperDirectory: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Documents/Wallpapers", isDirectory: true)
+    }
     private var windows: [WallpaperWindow] = []
     private var players: [AVQueuePlayer] = []
     private var loopers: [AVPlayerLooper] = []
@@ -43,8 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func availableWallpapers() -> [URL] {
         let fm = FileManager.default
-        let folder = URL(fileURLWithPath: wallpaperDirectory)
-        let bundled = (try? fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil))?
+        let bundled = (try? fm.contentsOfDirectory(at: wallpaperDirectory, includingPropertiesForKeys: nil))?
             .filter { $0.pathExtension.lowercased() == "mp4" } ?? []
         return bundled.sorted {
             $0.lastPathComponent.localizedCaseInsensitiveCompare($1.lastPathComponent) == .orderedAscending
